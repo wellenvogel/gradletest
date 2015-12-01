@@ -37,7 +37,7 @@ int main(int argc, char ** argv)
 
        jclass jcls = jniEnv->FindClass("de/wellenvogel/gtest/main/GTestMain");
        if (jcls == NULL) {
-          jniEnv->ExceptionDescribe();/usr/lib/jvm/java-7-openjdk-amd64/jre/lib/amd64
+          jniEnv->ExceptionDescribe();
           javaVM->DestroyJavaVM();
           return 1;
        }
