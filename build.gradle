@@ -1,0 +1,128 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'java'
+
+apply plugin: 'cpp'
+
+def jhome=System.getProperty("java.home")
+def jinclude=project.file("${jhome}/include")
+if (! jinclude.exists()){
+    def jhomex=project.file("$jhome/..")
+    jinclude=project.file("${jhomex}/include")
+    assert jinclude.exists()," no include in ${jhome} and ${jhomex}, seems that we do not have a JDK"
+    jhome=jhomex
+}
+
+def jvmlibs=System.getProperty("sun.boot.library.path").split(File.pathSeparator)
+def jvmlibsExt=jvmlibs.collect()
+    ["server","client"].each{ cs->
+        jvmlibsExt+=jvmlibs.collect{it+"/"+cs}
+    }
+
+"seems that we are running an jre instead of a jdk, java.home=${jhome}"
+model {
+
+    components {
+      main(NativeExecutableSpec){
+          binaries.all {
+              cppCompiler.args "-I"+jinclude
+              jvmlibsExt.each {
+                  println "adding compiler option -L"+it
+                  linker.args "-L"+it
+              }
+              linker.args "-ljvm"
+          }
+          /*
+          sources {
+              cpp {
+                  source {
+                      lib library:'jvm'
+                  }
+              }
+          }
+          */
+
+        }
+
+
+
+
+    }
+
+    repositories {
+        // Set up a prebuilt library to represent the unzipped archive
+        lib(PrebuiltLibraries) {
+            jvm {
+                headers.srcDir "${jhome}/include"
+                binaries.withType(StaticLibraryBinary) {
+                    staticLibraryFile = file("${jhome}/x.a")
+                }
+            }
+        }
+    }
+
+}
+
+/*
+model {
+    buildTypes {
+        release
+    }
+
+    platforms {
+
+        x64 {
+            architecture "x86_64"
+
+        }
+
+        flavors {
+            community
+        }
+    }
+
+    components {
+
+        main(NativeExecutableSpec)
+    }
+}
+
+*/
+
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+task runMain(type: org.gradle.api.tasks.JavaExec){
+    doFirst{
+        classpath sourceSets.main.runtimeClasspath
+    }
+    main="de.wellenvogel.gtest.main.GTestMain"
+    dependsOn build
+}
+
+task runCppMain(type: org.gradle.api.tasks.Exec){
+    executable "$projectDir/build/binaries/mainExecutable/main"
+    def lp=jvmlibsExt.join(File.pathSeparator)
+    println "LD_LIBRARY_PATH="+lp
+    environment "LD_LIBRARY_PATH",lp
+    def cp=sourceSets.main.runtimeClasspath.asPath
+    println "CLASSPATH="+cp
+    environment "CLASSPATH",cp
+
+    dependsOn build
+}
