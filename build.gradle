@@ -4,8 +4,10 @@ buildscript {
     repositories {
         mavenCentral()
     }
+    apply from: "include.gradle", to: project
 
 }
+defTask()
 
 allprojects {
     repositories {
@@ -34,6 +36,9 @@ def jvmlibsExt=jvmlibs.collect()
 
 "seems that we are running an jre instead of a jdk, java.home=${jhome}"
 model {
+    buildTypes{
+        release
+    }
 
     components {
       main(NativeExecutableSpec){
@@ -126,3 +131,11 @@ task runCppMain(type: org.gradle.api.tasks.Exec){
 
     dependsOn build
 }
+
+task testTask(type: getBuildscript().getClassLoader().loadClass("org.gradle.api.Task")){
+    doFirst{
+        println "${name} is running"
+    }
+}
+
+task testTask3(type:TestTaskClass)

@@ -1,0 +1,17 @@
+
+println "include.gradle apply"
+project.configure(project){
+    buildscript{
+        dependencies{
+            def e=file("extras/build/libs/extras.jar")
+            assert e.exists()
+            classpath files(e)
+        }
+    }
+    project.ext.defTask={
+        def cl=getBuildscript().getClassLoader().loadClass("de.wellenvogel.btest.TestTask")
+        project.tasks.create(name: "secondTest", type: cl)
+        project.ext.TestTaskClass=cl
+
+    }
+}
